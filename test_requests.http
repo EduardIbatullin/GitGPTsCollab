@@ -2,15 +2,15 @@
 
 ### Получить структуру репозитория
 GET http://127.0.0.1:8000/repos/FastAPI_Project/structure
-Authorization: Bearer {{GITHUB_TOKEN}}
+Authorization: Bearer {{MY_GITHUB_TOKEN}}
 
 ### Получить содержимое файла
 GET http://127.0.0.1:8000/repos/FastAPI_Project/file?path=README.md
-Authorization: Bearer {{GITHUB_TOKEN}}
+Authorization: Bearer {{MY_GITHUB_TOKEN}}
 
 ### Создать новый файл
 POST http://127.0.0.1:8000/repos/FastAPI_Project/file
-Authorization: Bearer {{GITHUB_TOKEN}}
+Authorization: Bearer {{MY_GITHUB_TOKEN}}
 Content-Type: application/json
 
 {

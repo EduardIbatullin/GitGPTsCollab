@@ -54,7 +54,7 @@
 ## ▶️ Запуск сервера
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 - Сервер будет доступен по адресу `http://127.0.0.1:8000`

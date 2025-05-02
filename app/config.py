@@ -7,13 +7,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Получаем необходимые переменные окружения
-GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
-GITHUB_USERNAME = os.getenv('GITHUB_USERNAME')
+MY_GITHUB_TOKEN = os.getenv('MY_GITHUB_TOKEN')
+MY_GITHUB_USERNAME = os.getenv('MY_GITHUB_USERNAME')
 
 # Если токен не найден, выводим ошибку
-if GITHUB_TOKEN is None:
-    raise ValueError("Не удалось найти TELEGRAM_BOT_TOKEN в .env файле")
+if MY_GITHUB_TOKEN is None:
+    raise ValueError("Не удалось найти MY_GITHUB_TOKEN в .env файле")
 
 # Если имя пользователя не найдено, выводим ошибку
-if GITHUB_USERNAME is None:
-    raise ValueError("Не удалось найти GITHUB_USERNAME в .env файле")
+if MY_GITHUB_USERNAME is None:
+    raise ValueError("Не удалось найти MY_GITHUB_USERNAME в .env файле")
