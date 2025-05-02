@@ -12,7 +12,7 @@ GITHUB_USERNAME = os.getenv('GITHUB_USERNAME')
 
 # Если токен не найден, выводим ошибку
 if GITHUB_TOKEN is None:
-    raise ValueError("Не удалось найти TELEGRAM_BOT_TOKEN в .env файле")
+    raise ValueError("Не удалось найти GITHUB_TOKEN в .env файле")
 
 # Если имя пользователя не найдено, выводим ошибку
 if GITHUB_USERNAME is None:
