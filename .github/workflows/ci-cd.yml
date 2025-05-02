@@ -9,6 +9,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+      MY_GITHUB_USERNAME: ${{ secrets.MY_GITHUB_USERNAME }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -31,18 +35,12 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
     container:
       image: ghcr.io/railwayapp/cli:latest
-
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
       SVC_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Deploy via Railway CLI
-        run: |
-          railway up --service=${{ env.SVC_ID }}
+      - run: railway up --service=${{ env.SVC_ID }}
