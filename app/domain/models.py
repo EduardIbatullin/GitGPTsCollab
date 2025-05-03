@@ -40,3 +40,31 @@ class CreateFileRequest(BaseModel):
     filename: str
     content: str
     message: str
+
+class UpdateFileRequest(BaseModel):
+    """
+    Запрос для обновления существующего файла в репозитории.
+
+    Attributes:
+        path (str): Путь к папке в репозитории.
+        filename (str): Имя файла.
+        content (str): Новое содержимое файла.
+        message (str): Сообщение коммита.
+    """
+    path: str
+    filename: str
+    content: str
+    message: str
+
+class DeleteFileRequest(BaseModel):
+    """
+    Запрос для удаления файла из репозитория.
+
+    Attributes:
+        path (str): Путь к папке в репозитории.
+        filename (str): Имя файла.
+        message (str): Сообщение коммита.
+    """
+    path: str
+    filename: str
+    message: str

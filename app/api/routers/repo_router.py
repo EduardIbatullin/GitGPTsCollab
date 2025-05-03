@@ -2,7 +2,13 @@
 
 from fastapi import APIRouter, Depends
 from app.domain.services.github_service import GitHubService
-from app.domain.models import RepoStructureResponse, FileContentResponse, CreateFileRequest
+from app.domain.models import (
+    RepoStructureResponse,
+    FileContentResponse,
+    CreateFileRequest,
+    UpdateFileRequest,
+    DeleteFileRequest,
+)
 from app.api.dependencies import get_github_service
 
 router = APIRouter()
@@ -42,8 +48,7 @@ async def get_file_content(
     Returns:
         FileContentResponse: Ответ с содержимым файла.
     """
-    content = await github_service.get_file_content(repo, path)
-    return content
+    return await github_service.get_file_content(repo, path)
 
 @router.post("/repos/{repo}/file", response_model=FileContentResponse)
 async def create_new_file(
@@ -62,5 +67,59 @@ async def create_new_file(
     Returns:
         FileContentResponse: Ответ с информацией о созданном файле.
     """
-    result = await github_service.create_file(repo, file_data.path, file_data.filename, file_data.content, file_data.message)
-    return result
+    return await github_service.create_file(
+        repo,
+        file_data.path,
+        file_data.filename,
+        file_data.content,
+        file_data.message,
+    )
+
+@router.put("/repos/{repo}/file", response_model=FileContentResponse)
+async def update_file(
+    repo: str,
+    file_data: UpdateFileRequest,
+    github_service: GitHubService = Depends(get_github_service)
+) -> FileContentResponse:
+    """
+    Эндпоинт для обновления существующего файла в репозитории на GitHub.
+
+    Args:
+        repo (str): Имя репозитория.
+        file_data (UpdateFileRequest): Данные для обновления файла.
+        github_service (GitHubService): Сервис для взаимодействия с GitHub API.
+
+    Returns:
+        FileContentResponse: Ответ с информацией об обновлённом файле.
+    """
+    return await github_service.update_file(
+        repo,
+        file_data.path,
+        file_data.filename,
+        file_data.content,
+        file_data.message,
+    )
+
+@router.delete("/repos/{repo}/file", response_model=FileContentResponse)
+async def delete_file(
+    repo: str,
+    file_data: DeleteFileRequest,
+    github_service: GitHubService = Depends(get_github_service)
+) -> FileContentResponse:
+    """
+    Эндпоинт для удаления файла из репозитория на GitHub.
+
+    Args:
+        repo (str): Имя репозитория.
+        file_data (DeleteFileRequest): Данные для удаления файла.
+        github_service (GitHubService): Сервис для взаимодействия с GitHub API.
+
+    Returns:
+        FileContentResponse: Ответ с информацией об удалённом файле.
+    """
+    return await github_service.delete_file(
+        repo,
+        file_data.path,
+        file_data.filename,
+        file_data.message,
+    )

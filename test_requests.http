@@ -1,21 +1,42 @@
-# @dotenv .env
-
 ### Получить структуру репозитория
-GET http://127.0.0.1:8000/repos/FastAPI_Project/structure
+GET http://127.0.0.1:8000/repos/{{repo}}/structure
 Authorization: Bearer {{MY_GITHUB_TOKEN}}
 
 ### Получить содержимое файла
-GET http://127.0.0.1:8000/repos/FastAPI_Project/file?path=README.md
+GET http://127.0.0.1:8000/repos/{{repo}}/file?path={{path}}
 Authorization: Bearer {{MY_GITHUB_TOKEN}}
 
 ### Создать новый файл
-POST http://127.0.0.1:8000/repos/FastAPI_Project/file
+POST http://127.0.0.1:8000/repos/{{repo}}/file
 Authorization: Bearer {{MY_GITHUB_TOKEN}}
 Content-Type: application/json
 
 {
-  "path": "app",
+  "path": "src",
   "filename": "hello.txt",
   "content": "Привет, Boomerang!",
   "message": "Add hello.txt"
+}
+
+### Обновить существующий файл
+PUT http://127.0.0.1:8000/repos/{{repo}}/file
+Authorization: Bearer {{MY_GITHUB_TOKEN}}
+Content-Type: application/json
+
+{
+  "path": "src",
+  "filename": "hello.txt",
+  "content": "Обновлённый текст",
+  "message": "Update hello.txt"
+}
+
+### Удалить файл
+DELETE http://127.0.0.1:8000/repos/{{repo}}/file
+Authorization: Bearer {{MY_GITHUB_TOKEN}}
+Content-Type: application/json
+
+{
+  "path": "src",
+  "filename": "hello.txt",
+  "message": "Remove hello.txt"
 }
