@@ -1,19 +1,18 @@
-
 # GitHub Repo Assistant API
 
 Лёгкий FastAPI-сервер для работы с вашими репозиториями на GitHub.  
 Позволяет:
-- Просмотреть структуру репозитория
-- Получить содержимое файла
-- Создать новый файл
+- Просмотреть структуру репозитория  
+- Получить содержимое файла  
+- Создать новый файл  
 
 ---
 
 ## 📋 Пререквизиты
 
 - Python 3.8+  
-- GitHub Personal Access Token с правами «repo»  
-- FastAPI и зависимости (см. `requirements.txt`)  
+- GitHub Personal Access Token с правами `repo`  
+- Зависимости (см. `requirements.txt` и `requirements-dev.txt`)  
 
 ---
 
@@ -23,18 +22,26 @@
    ```bash
    git clone https://github.com/your-username/your-project.git
    cd your-project
-   ```
+````
 
-2. Cоздайте и активируйте виртуальное окружение:
+2. Создайте и активируйте виртуальное окружение:
+
    ```bash
    python -m venv .venv
    source .venv/bin/activate       # Linux/macOS
    .venv\Scripts\activate          # Windows
    ```
 
-3. Установите зависимости:
+3. Установите основные зависимости:
+
    ```bash
    pip install -r requirements.txt
+   ```
+
+4. (Опционально) Установите dev-зависимости:
+
+   ```bash
+   pip install -r requirements-dev.txt
    ```
 
 ---
@@ -42,23 +49,31 @@
 ## 🔧 Конфигурация
 
 1. Создайте файл `.env` в корне проекта:
+
    ```dotenv
-   GITHUB_TOKEN=ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXX
-   GITHUB_USERNAME=your-github-username
+   MY_GITHUB_TOKEN=ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+   MY_GITHUB_USERNAME=your-github-username
    ```
 
-2. Убедитесь, что в `app/config.py` правильно читаются эти переменные.
+2. Проверьте, что `app/core/config.py` читает именно эти переменные:
+
+   ```python
+   from dotenv import load_dotenv
+   load_dotenv()
+   MY_GITHUB_TOKEN = os.getenv("MY_GITHUB_TOKEN")
+   MY_GITHUB_USERNAME = os.getenv("MY_GITHUB_USERNAME")
+   ```
 
 ---
 
 ## ▶️ Запуск сервера
 
 ```bash
-uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+uvicorn app.api.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-- Сервер будет доступен по адресу `http://127.0.0.1:8000`
-- Документация Swagger UI: `http://127.0.0.1:8000/docs`
+* Сервер будет доступен по адресу `http://127.0.0.1:8000`
+* Swagger UI: `http://127.0.0.1:8000/docs`
 
 ---
 
@@ -70,13 +85,30 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 GET /repos/{repo}/structure
 ```
 
-- **Параметры**  
-  - `repo` (path) — имя репозитория (например, `my-repo`)
+* **Path**
 
-- **Пример**  
+  * `repo` — имя репозитория, например `my-repo`
+
+* **Пример**
+
   ```bash
   curl http://127.0.0.1:8000/repos/my-repo/structure
   ```
+
+* **Ответ**
+
+  ```json
+  {
+    "repo": "my-repo",
+    "tree": [
+      { "path": "", "type": "dir" },
+      { "path": "README.md", "type": "file" },
+      { "path": "src", "type": "dir" }
+    ]
+  }
+  ```
+
+---
 
 ### 2. Получить содержимое файла
 
@@ -84,14 +116,31 @@ GET /repos/{repo}/structure
 GET /repos/{repo}/file?path={file_path}
 ```
 
-- **Параметры**  
-  - `repo` (path) — имя репозитория  
-  - `path` (query) — путь к файлу внутри репо (например, `src/main.py`)
+* **Path**
 
-- **Пример**  
+  * `repo` — имя репозитория
+
+* **Query**
+
+  * `path` — путь к файлу внутри репозитория, например `README.md` или `src/main.py`
+
+* **Пример**
+
   ```bash
   curl "http://127.0.0.1:8000/repos/my-repo/file?path=README.md"
   ```
+
+* **Ответ**
+
+  ```json
+  {
+    "path": "README.md",
+    "content": "Artem Shumeyko's course \"FastAPI — immersion in backend development in Python\"",
+    "encoding": "utf-8"
+  }
+  ```
+
+---
 
 ### 3. Создать новый файл
 
@@ -100,34 +149,58 @@ POST /repos/{repo}/file
 Content-Type: application/json
 ```
 
-- **Параметры**  
-  - `repo` (path) — имя репозитория  
-  - В теле JSON:
-    - `path` — папка внутри репо (без ведущего `/`), например `src`
-    - `filename` — имя файла, например `new_script.py`
-    - `content` — текст файла
-    - `message` — (опционально) сообщение коммита
+* **Path**
 
-- **Пример**  
+  * `repo` — имя репозитория
+
+* **Body** (JSON)
+
+  * `path` — папка внутри репозитория без ведущего `/`; пустая строка или отсутствие поля = корень
+  * `filename` — имя нового файла, например `hello.txt`
+  * `content` — текст файла в UTF-8 (не Base64)
+  * `message` — сообщение коммита (по умолчанию `"Create file via API"`)
+
+* **Примеры**
+
+  **а) В корень репозитория**
+
+  ```bash
+  curl -X POST http://127.0.0.1:8000/repos/my-repo/file \
+    -H "Content-Type: application/json" \
+    -d '{
+      "filename": "hello.txt",
+      "content": "Привет, мир!",
+      "message": "Add hello.txt"
+    }'
+  ```
+
+  **б) В папку `src/`**
+
   ```bash
   curl -X POST http://127.0.0.1:8000/repos/my-repo/file \
     -H "Content-Type: application/json" \
     -d '{
       "path": "src",
-      "filename": "hello.txt",
-      "content": "SGVsbG8sIHdvcmxkIQo=",
-      "message": "Add hello.txt"
+      "filename": "utils.py",
+      "content": "print(\"Hello from utils\")",
+      "message": "Add utils.py"
     }'
   ```
 
-> **Примечание**: в `content` должен быть Base64-закодированный текст (FastAPI-клиент умеет работать с обычным UTF-8 содержимым и сам кодировать).
+* **Ответ**
+
+  ```json
+  {
+    "path": "hello.txt",
+    "content": "Привет, мир!",
+    "encoding": "utf-8"
+  }
+  ```
 
 ---
 
 ## 📝 Лицензия
 
-Licensed under the MIT License. See [LICENSE](./LICENSE) file for details.
+Licensed under the MIT License. See [LICENSE](./LICENSE) for details.
 
----
-
-© 2025  
+© 2025
