@@ -17,33 +17,46 @@ class GitHubClient:
         self.base_url = "https://api.github.com"
         self.headers = {"Authorization": f"Bearer {MY_GITHUB_TOKEN}"}
 
-    # async def get_repo_info(self, repo: str) -> dict:
-    #     """
-    #     Получить информацию о репозитории.
-    #     Позволяет отличить 404 по репозиторию от 404 по файлу.
-    #     """
-    #     url = f"{self.base_url}/repos/{MY_GITHUB_USERNAME}/{repo}"
-    #     async with httpx.AsyncClient() as client:
-    #         response = await client.get(url, headers=self.headers)
-    #     response.raise_for_status()
-    #     return response.json()
-
-
-    async def list_repo_tree(self, repo: str) -> list:
+    async def get_repo_info(self, repo: str) -> dict:
         """
-        Получение структуры репозитория.
+        Получение мета-информации о репозитории (включая default_branch).
 
         Args:
             repo (str): Имя репозитория.
 
         Returns:
-            list: Дерево файлов и папок.
+            dict: Полная информация о репозитории.
         """
-        url = f"{self.base_url}/repos/{MY_GITHUB_USERNAME}/{repo}/contents"
+        url = f"{self.base_url}/repos/{MY_GITHUB_USERNAME}/{repo}"
         async with httpx.AsyncClient() as client:
             response = await client.get(url, headers=self.headers)
         response.raise_for_status()
         return response.json()
+
+    async def list_repo_tree(self, repo: str) -> list:
+        """
+        Получение полного дерева файлов и папок репозитория рекурсивно.
+
+        Args:
+            repo (str): Имя репозитория.
+
+        Returns:
+            list: Список узлов дерева (type="blob" для файлов, "tree" для папок).
+        """
+        # Узнаём default_branch, чтобы обойти все ветки
+        repo_info = await self.get_repo_info(repo)
+        branch = repo_info.get("default_branch", "main")
+
+        url = (
+            f"{self.base_url}/repos/"
+            f"{MY_GITHUB_USERNAME}/{repo}/git/trees/{branch}"
+            "?recursive=1"
+        )
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, headers=self.headers)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("tree", [])
 
     async def get_file_content(self, repo: str, path: str) -> dict:
         """
@@ -54,7 +67,7 @@ class GitHubClient:
             path (str): Путь к файлу.
 
         Returns:
-            dict: JSON с base64-контентом и SHA.
+            dict: JSON с base64-контентом, SHA и прочими метаданными.
         """
         url = f"{self.base_url}/repos/{MY_GITHUB_USERNAME}/{repo}/contents/{path}"
         async with httpx.AsyncClient() as client:
@@ -79,9 +92,10 @@ class GitHubClient:
         encoded_content = base64.b64encode(content.encode("utf-8")).decode("ascii")
         url_path = f"{path.rstrip('/')}/{filename}" if path else filename
         url = f"{self.base_url}/repos/{MY_GITHUB_USERNAME}/{repo}/contents/{url_path}"
-        data = {"message": message, "content": encoded_content}
+        payload = {"message": message, "content": encoded_content}
+
         async with httpx.AsyncClient() as client:
-            response = await client.put(url, json=data, headers=self.headers)
+            response = await client.put(url, json=payload, headers=self.headers)
         response.raise_for_status()
         return response.json()
 
@@ -104,9 +118,10 @@ class GitHubClient:
         sha = existing["sha"]
         encoded = base64.b64encode(content.encode("utf-8")).decode("ascii")
         url = f"{self.base_url}/repos/{MY_GITHUB_USERNAME}/{repo}/contents/{url_path}"
-        data = {"message": message, "content": encoded, "sha": sha}
+        payload = {"message": message, "content": encoded, "sha": sha}
+
         async with httpx.AsyncClient() as client:
-            response = await client.put(url, json=data, headers=self.headers)
+            response = await client.put(url, json=payload, headers=self.headers)
         response.raise_for_status()
         return response.json()
 
@@ -123,27 +138,13 @@ class GitHubClient:
         Returns:
             dict: Ответ GitHub API.
         """
-        # Формируем относительный путь к файлу в репо
         url_path = f"{path.rstrip('/')}/{filename}" if path else filename
-
-        # Получаем SHA текущего содержимого, необходимый для удаления
         existing = await self.get_file_content(repo, url_path)
         sha = existing["sha"]
-
         url = f"{self.base_url}/repos/{MY_GITHUB_USERNAME}/{repo}/contents/{url_path}"
-        payload = {
-            "message": message,
-            "sha": sha
-        }
+        payload = {"message": message, "sha": sha}
 
         async with httpx.AsyncClient() as client:
-            # Для DELETE с телом используем универсальный метод request()
-            response = await client.request(
-                "DELETE",
-                url,
-                json=payload,
-                headers=self.headers
-            )
+            response = await client.request("DELETE", url, json=payload, headers=self.headers)
         response.raise_for_status()
         return response.json()
-
