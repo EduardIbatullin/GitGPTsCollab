@@ -50,11 +50,15 @@ class UpdateFileRequest(BaseModel):
         filename (str): Имя файла.
         content (str): Новое содержимое файла.
         message (str): Сообщение коммита.
+        content_sha256 (str | None): Контрольная сумма SHA-256 содержимого (опционально).
+        content_lines (int | None): Количество строк в содержимом (опционально).
     """
     path: str
     filename: str
     content: str
     message: str
+    content_sha256: str | None = None
+    content_lines: int | None = None
 
 class DeleteFileRequest(BaseModel):
     """

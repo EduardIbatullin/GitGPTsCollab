@@ -2,6 +2,7 @@
 
 import base64
 import httpx
+import hashlib
 
 from app.infrastructure.github_client import GitHubClient
 from app.domain.models import FileContentResponse, RepoStructureResponse
@@ -73,7 +74,6 @@ class GitHubService:
             encoding="utf-8"
         )
 
-
     async def create_file(
         self,
         repo: str,
@@ -112,7 +112,9 @@ class GitHubService:
         path: str,
         filename: str,
         content: str,
-        message: str
+        message: str,
+        content_sha256: str | None = None,
+        content_lines: int | None = None
     ) -> FileContentResponse:
         """
         Обновление существующего файла в репозитории.
@@ -123,10 +125,30 @@ class GitHubService:
             filename (str): Имя файла.
             content (str): Новое содержимое файла.
             message (str): Сообщение коммита.
+            content_sha256 (str | None): Контрольная сумма SHA-256 от содержимого.
+            content_lines (int | None): Ожидаемое количество строк.
 
         Returns:
             FileContentResponse: Информация об обновлённом файле.
         """
+        if not content.strip():
+            raise ValueError("Передано пустое содержимое файла.")
+
+        if content_sha256:
+            actual_hash = hashlib.sha256(content.encode()).hexdigest()
+            if actual_hash != content_sha256:
+                raise ValueError("Контрольная сумма содержимого не совпадает. Возможна ошибка передачи.")
+
+        if content_lines is not None:
+            actual_lines = len(content.splitlines())
+            if actual_lines < int(0.8 * content_lines):
+                raise ValueError(f"Содержимое файла короче ожидаемого ({actual_lines} < {content_lines})")
+
+        try:
+            compile(content, filename, "exec")
+        except SyntaxError as e:
+            raise ValueError(f"Синтаксическая ошибка в файле: {e}")
+
         try:
             result = await self.github_client.update_file(repo, path, filename, content, message)
         except httpx.HTTPStatusError as e:
