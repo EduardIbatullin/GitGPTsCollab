@@ -22,7 +22,7 @@
    ```bash
    git clone https://github.com/your-username/your-project.git
    cd your-project
-````
+   ```
 
 2. Создайте и активируйте виртуальное окружение:
 
